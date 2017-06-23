@@ -19,6 +19,7 @@ public class GameBase {
 	 *  0  1 2 3 4 5
 	 */
 	static boolean player;
+	static boolean repeatMove;
 
 	public static void main(String[] args) {
 		setBoard();
@@ -26,9 +27,11 @@ public class GameBase {
 
 		printBoard();
 		while (!terminal()) {
+			repeatMove = false;
 			int move = playerMove();
 			updateBoard(move);
 			printBoard();
+			if (repeatMove) continue;
 			player = player ? false : true;
 		}
 
@@ -212,12 +215,14 @@ public class GameBase {
 			//The case when a stone goes to the store
 			if (sowLocation == pitNum) {
 				store[0]++;
+				if (i == numberOfStones - 1) repeatMove = true;
 				i++;
 				if (i < numberOfStones) pit[sowLocation]++;
 				sowLocation++;
 				continue;
 			} else if (sowLocation == 0) {
 				store[1]++;
+				if (i == numberOfStones - 1) repeatMove = true;
 				i++;
 				if (i < numberOfStones) pit[sowLocation]++;
 				sowLocation++;
@@ -226,7 +231,7 @@ public class GameBase {
 
 			//Capture
 			if (i == numberOfStones - 1) {
-				if (pit[sowLocation] == 0 && pit[Math.abs(pit.length - 1 - sowLocation)] != 0) {
+				if (pit[sowLocation] == 0) {
 					store[sowLocation < pitNum ? 0 : 1] += 1 + pit[Math.abs(pit.length - 1 - sowLocation)];
 					pit[Math.abs(pit.length - 1 - sowLocation)] = 0;
 					break;
