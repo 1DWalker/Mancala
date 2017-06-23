@@ -10,13 +10,12 @@ import java.util.Scanner;
 
 public class GameBase {
 
-	static int pitNum = 6; //Number of pits per side
-	static int stoneNum = 6; //Number of starting stones per pit
-	static int[] store = new int[2];
-	static int[] pit = new int[pitNum * 2];
+	static int pitNum = 6; //Number of boards per side
+	static int stoneNum = 4; //Number of starting stones per board
+	static int[] board = new int[pitNum * 2 + 2];
 	/* Board representation
-	 * 11 10 9 8 7 6
-	 *  0  1 2 3 4 5
+	 * 13 | 12 11 10 9 8 7
+	 *       0  1  2 3 4 5 | 6
 	 */
 	static boolean player;
 	static boolean repeatMove;
@@ -38,40 +37,43 @@ public class GameBase {
 		captureRemainingPieces();
 		printBoard();
 		System.out.print("Game over. ");
-		if (store[0] > store[1]) System.out.println("Player South wins by " + (store[0] - store[1]) + "!");
-		else if (store[0] == store[1]) System.out.println("Draw!");
-		else System.out.println("Player North wins by " + (store[1] - store[0]) + "!");
+		if (board[pitNum] > board[2 * pitNum + 1]) System.out.println("Player South wins by " + (board[pitNum] - board[2 * pitNum + 1]) + "!");
+		else if (board[pitNum] == board[2 * pitNum + 1]) System.out.println("Draw!");
+		else System.out.println("Player North wins by " + (board[2 * pitNum + 1] - board[pitNum]) + "!");
 	}
 
 	public static boolean terminal() {
 		//Inefficient as it checks both sides
 		for (int i = 0; i < pitNum; i++) {
-			if (pit[i] != 0) break;
+			if (board[i] != 0) break;
 			if (i == pitNum - 1) return true;
 		}
 
-		for (int i = pitNum; i < 2 * pitNum; i++) {
-			if (pit[i] != 0) break;
-			if (i == 2 * pitNum - 1) return true;
+		for (int i = pitNum + 1; i < 2 * pitNum + 2; i++) {
+			if (board[i] != 0) break;
+			if (i == 2 * pitNum + 1) return true;
 		}
 		return false;
 	}
 
 	public static void setBoard() {
-		for (int i = 0; i < pit.length; i++) {
-			pit[i] = stoneNum;
+		for (int i = 0; i < pitNum; i++) {
+			board[i] = stoneNum;
+			board[2 * pitNum - i] = stoneNum;
 		}
 
-		store[0] = 0;
-		store[1] = 0;
+		System.out.println(board[2 * pitNum]);
+		board[pitNum] = 0;
+		board[2 * pitNum + 1] = 0;
 	}
 
 	public static void printBoard() {
 		//Find the largest value.
 		int max = -1;
-		for (int i = 0; i < pit.length; i++) {
-			if (pit[i] > max) {
-				max = pit[i];
+		for (int i = 0; i < board.length; i++) {
+			if (i == pitNum || i == 2 * pitNum + 1) continue;
+			if (board[i] > max) {
+				max = board[i];
 			}
 		}
 
@@ -81,31 +83,25 @@ public class GameBase {
 			}
 		}
 
-		for (int i = 0; i < 2; i++) {
-			if (store[i] > max) {
-				max = store[i];
-			}
-		}
-
-//		String pitString = "";
-//		String storeString = store[1] + "  |";
+//		String boardString = "";
+//		String storeString = board[2 * pitNum + 1] + "  |";
 //		System.out.print(storeString);
 //		for (int i = 2 * pitNum - 1; i >= pitNum; i--) {
-//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, pit[i])) / Math.log(10)); k++) pitString += " ";
-//			pitString += "  " + pit[i];
+//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[i])) / Math.log(10)); k++) boardString += " ";
+//			boardString += "  " + board[i];
 //		}
 //
-//		System.out.println(pitString);
+//		System.out.println(boardString);
 //
 //		for (int i = 0; i < storeString.length(); i++) System.out.print(" ");
 //		for (int i = 0; i < pitNum; i++) {
-//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, pit[i])) / Math.log(10)); k++) System.out.print(" ");
-//			System.out.print("  " + pit[i]);
+//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[i])) / Math.log(10)); k++) System.out.print(" ");
+//			System.out.print("  " + board[i]);
 //		}
-//		System.out.println("  |  " + store[0]);
+//		System.out.println("  |  " + board[pitNum]);
 //
 //		for (int i = 0; i < storeString.length(); i++) System.out.print(" ");
-//		for (int i = 0; i < pitString.length() + 1; i++) System.out.print("-");
+//		for (int i = 0; i < boardString.length() + 1; i++) System.out.print("-");
 //		System.out.println();
 //		for (int i = 0; i < storeString.length(); i++) System.out.print(" ");
 //		for (int i = 0; i < pitNum; i++) {
@@ -113,44 +109,44 @@ public class GameBase {
 //			System.out.print("  " + (i + 1));
 //		}
 
-		String pitString = " ";
-		for (int i = 2 * pitNum - 1; i >= pitNum; i--) {
-			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, pit[i])) / Math.log(10)); k++) pitString += " ";
-			pitString += "  " + pit[i];
+		String boardString = " ";
+		for (int i = 2 * pitNum; i >= pitNum + 1; i--) {
+			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[i])) / Math.log(10)); k++) boardString += " ";
+			boardString += "  " + board[i];
 		}
-		pitString += " ";
+		boardString += " ";
 
 		//Print "<-- North"
-		if ((pitString.length() / 2 - 8) > 0) {
-			for (int i = 0; i < (pitString.length() - 9) / 2; i++) System.out.print(" ");
+		if ((boardString.length() / 2 - 8) > 0) {
+			for (int i = 0; i < (boardString.length() - 9) / 2; i++) System.out.print(" ");
 			System.out.print("<-- North");
-			for (int i = 0; i < (pitString.length() - 9) / 2; i++) System.out.print(" ");
+			for (int i = 0; i < (boardString.length() - 9) / 2; i++) System.out.print(" ");
 		}
 		System.out.println();
 
-		for (int i = 0; i < pitString.length() + 2; i++) System.out.print("-");
+		for (int i = 0; i < boardString.length() + 2; i++) System.out.print("-");
 		System.out.println();
-		System.out.println(pitString);
+		System.out.println(boardString);
 		System.out.println();
 
 		String storeString = "   ";
-		for (int i = 0; i < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, store[1])) / Math.log(10)); i++) storeString += " ";
-		storeString += store[1];
+		for (int i = 0; i < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[2 * pitNum + 1])) / Math.log(10)); i++) storeString += " ";
+		storeString += board[2 * pitNum + 1];
 		int storeStringLength = storeString.length();
-		for (int i = 0; i < pitString.length() - storeStringLength - Math.floor(Math.log(Math.max(1, store[0])) / Math.log(10)) - 2; i++) storeString += " ";
-		storeString += store[0];
+		for (int i = 0; i < boardString.length() - storeStringLength - Math.floor(Math.log(Math.max(1, board[pitNum])) / Math.log(10)) - 2; i++) storeString += " ";
+		storeString += board[pitNum];
 		System.out.println(storeString);
 		System.out.println();
 
-		pitString = " ";
+		boardString = " ";
 		for (int i = 0; i < pitNum; i++) {
-			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, pit[i])) / Math.log(10)); k++) pitString += " ";
-			pitString += "  " + pit[i];
+			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[i])) / Math.log(10)); k++) boardString += " ";
+			boardString += "  " + board[i];
 		}
-		pitString += " ";
-		System.out.println(pitString);
+		boardString += " ";
+		System.out.println(boardString);
 
-		for (int i = 0; i < pitString.length() + 2; i++) System.out.print("-");
+		for (int i = 0; i < boardString.length() + 2; i++) System.out.print("-");
 		System.out.println();
 
 		String columnString = " ";
@@ -162,7 +158,7 @@ public class GameBase {
 		System.out.println(columnString);
 
 		//Print "South -->"
-		if ((pitString.length() / 2 - 8) > 0) {
+		if ((boardString.length() / 2 - 8) > 0) {
 			for (int i = 0; i < (columnString.length() - 9) / 2; i++) System.out.print(" ");
 			System.out.print("South -->");
 			for (int i = 0; i < (columnString.length() - 9) / 2; i++) System.out.print(" ");
@@ -185,12 +181,12 @@ public class GameBase {
 			}
 
 			if (player) {
-				if (pit[move - 1] == 0) {
+				if (board[move - 1] == 0) {
 					System.out.print("Invalid move! Player " + (player ? "South's" : "North's") + " move: ");
 					continue;
 				}
 			} else {
-				if (pit[2 * pitNum - move] == 0) {
+				if (board[2 * pitNum - move + 1] == 0) {
 					System.out.print("Invalid move! Player "  + (player ? "South's" : "North's") + " move: ");
 					continue;
 				}
@@ -204,52 +200,38 @@ public class GameBase {
 	public static void updateBoard(int move) {
 		int sowLocation;
 		if (player) sowLocation = move - 1;
-		else sowLocation = pit.length - move;
+		else sowLocation = 2 * pitNum - move + 1;
 
-		int numberOfStones = pit[sowLocation];
-		pit[sowLocation] = 0;
+		int numberOfStones = board[sowLocation];
+		board[sowLocation] = 0;
 		sowLocation++;
+
 		for (int i = 0; i < numberOfStones; i++) {
-			if (sowLocation == pit.length) sowLocation = 0;
-
-			//The case when a stone goes to the store
-			if (sowLocation == pitNum) {
-				store[0]++;
-				if (i == numberOfStones - 1) repeatMove = true;
-				i++;
-				if (i < numberOfStones) pit[sowLocation]++;
-				sowLocation++;
-				continue;
-			} else if (sowLocation == 0) {
-				store[1]++;
-				if (i == numberOfStones - 1) repeatMove = true;
-				i++;
-				if (i < numberOfStones) pit[sowLocation]++;
-				sowLocation++;
-				continue;
-			}
-
+			if (sowLocation == board.length) sowLocation = 0;
 			//Capture
 			if (i == numberOfStones - 1) {
-				if (pit[sowLocation] == 0) {
-					store[sowLocation < pitNum ? 0 : 1] += 1 + pit[Math.abs(pit.length - 1 - sowLocation)];
-					pit[Math.abs(pit.length - 1 - sowLocation)] = 0;
+				if (sowLocation == pitNum || sowLocation == 2 * pitNum + 1) repeatMove = true;
+				else if (board[sowLocation] == 0) {
+					board[sowLocation < pitNum ? pitNum : 2 * pitNum + 1] += 1 + board[Math.abs(2 * pitNum - sowLocation)];
+					board[Math.abs(2 * pitNum - sowLocation)] = 0;
 					break;
 				}
 			}
-			pit[sowLocation]++;
+
+			board[sowLocation]++;
 			sowLocation++;
 		}
 	}
 
 	public static void captureRemainingPieces() { //At the end of the game, all the pieces belonging to one's side are captured.
-		for (int i = 0; i < pit.length; i++) {
+		for (int i = 0; i < board.length; i++) {
+			if (i == pitNum || i == 2 * pitNum + 1) continue;
 			if (i < pitNum) {
-				store[0] += pit[i];
-				pit[i] = 0;
+				board[pitNum] += board[i];
+				board[i] = 0;
 			} else {
-				store[1] += pit[i];
-				pit[i] = 0;
+				board[2 * pitNum + 1] += board[i];
+				board[i] = 0;
 			}
 		}
 	}
