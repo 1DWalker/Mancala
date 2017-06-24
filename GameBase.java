@@ -3,7 +3,7 @@ import java.util.Scanner;
 public class GameBase {
 
 	static int pitNum = 6; //Number of boards per side
-	static int stoneNum = 3; //Number of starting stones per board
+	static int stoneNum = 10; //Number of starting stones per board
 	static int[] board = new int[pitNum * 2 + 2];
 	/* Board representation
 	 * 13 | 12 11 10 9 8 7
@@ -172,6 +172,11 @@ public class GameBase {
 		sowLocation++;
 
 		for (int i = 0; i < numberOfStones; i++) {
+			if ((player && sowLocation == 2 * pitNum + 1) || (!player && sowLocation == pitNum)) { //Cannot sow the opponent's store
+				i--;
+				sowLocation++;
+				continue;
+			}
 			if (sowLocation == board.length) sowLocation = 0;
 			//Capture
 			if (i == numberOfStones - 1) {
