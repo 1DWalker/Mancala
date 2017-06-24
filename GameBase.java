@@ -1,17 +1,9 @@
-//import javafx.application.Application;
-//import javafx.scene.Scene;
-//import javafx.scene.control.Button;
-//import javafx.scene.layout.StackPane;
-//import javafx.stage.Stage;
-//import javafx.event.ActionEvent;
-//import javafx.event.EventHandler;
-//import java.util.Random;
 import java.util.Scanner;
 
 public class GameBase {
 
 	static int pitNum = 6; //Number of boards per side
-	static int stoneNum = 4; //Number of starting stones per board
+	static int stoneNum = 3; //Number of starting stones per board
 	static int[] board = new int[pitNum * 2 + 2];
 	/* Board representation
 	 * 13 | 12 11 10 9 8 7
@@ -62,7 +54,6 @@ public class GameBase {
 			board[2 * pitNum - i] = stoneNum;
 		}
 
-		System.out.println(board[2 * pitNum]);
 		board[pitNum] = 0;
 		board[2 * pitNum + 1] = 0;
 	}
@@ -82,32 +73,6 @@ public class GameBase {
 				max = i + 1;
 			}
 		}
-
-//		String boardString = "";
-//		String storeString = board[2 * pitNum + 1] + "  |";
-//		System.out.print(storeString);
-//		for (int i = 2 * pitNum - 1; i >= pitNum; i--) {
-//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[i])) / Math.log(10)); k++) boardString += " ";
-//			boardString += "  " + board[i];
-//		}
-//
-//		System.out.println(boardString);
-//
-//		for (int i = 0; i < storeString.length(); i++) System.out.print(" ");
-//		for (int i = 0; i < pitNum; i++) {
-//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, board[i])) / Math.log(10)); k++) System.out.print(" ");
-//			System.out.print("  " + board[i]);
-//		}
-//		System.out.println("  |  " + board[pitNum]);
-//
-//		for (int i = 0; i < storeString.length(); i++) System.out.print(" ");
-//		for (int i = 0; i < boardString.length() + 1; i++) System.out.print("-");
-//		System.out.println();
-//		for (int i = 0; i < storeString.length(); i++) System.out.print(" ");
-//		for (int i = 0; i < pitNum; i++) {
-//			for (int k = 0; k < Math.floor(Math.log(Math.max(1, max)) / Math.log(10)) - Math.floor(Math.log(Math.max(1, i + 1)) / Math.log(10)); k++) System.out.print(" ");
-//			System.out.print("  " + (i + 1));
-//		}
 
 		String boardString = " ";
 		for (int i = 2 * pitNum; i >= pitNum + 1; i--) {
@@ -211,7 +176,7 @@ public class GameBase {
 			//Capture
 			if (i == numberOfStones - 1) {
 				if (sowLocation == pitNum || sowLocation == 2 * pitNum + 1) repeatMove = true;
-				else if (board[sowLocation] == 0) {
+				else if (board[sowLocation] == 0 && (player && (sowLocation < pitNum) || !player && (sowLocation > pitNum) )) {
 					board[sowLocation < pitNum ? pitNum : 2 * pitNum + 1] += 1 + board[Math.abs(2 * pitNum - sowLocation)];
 					board[Math.abs(2 * pitNum - sowLocation)] = 0;
 					break;
