@@ -41,9 +41,9 @@ public class GameBase {
 			if (i == pitNum - 1) return true;
 		}
 
-		for (int i = pitNum + 1; i < 2 * pitNum + 2; i++) {
+		for (int i = pitNum + 1; i < 2 * pitNum + 1; i++) {
 			if (board[i] != 0) break;
-			if (i == 2 * pitNum + 1) return true;
+			if (i == 2 * pitNum) return true;
 		}
 		return false;
 	}
@@ -158,6 +158,7 @@ public class GameBase {
 			}
 
 			System.out.println();
+			keyboard.close();
 			return move;
 		}
 	}
