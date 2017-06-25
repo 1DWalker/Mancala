@@ -1,6 +1,6 @@
 import javafx.application.Application;
 import javafx.scene.Scene;
-//import javafx.scene.control.Button;
+import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -9,10 +9,11 @@ import javafx.event.EventHandler;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
-import javafx.application.Platform;
+import javafx.scene.shape.Circle;
 
 public class GUI extends Application implements EventHandler<ActionEvent> {
 
+	//GUI
 	static Image board = new Image("board.jpg");
 	static Image store = new Image("store.png");
 	static Image pitImage = new Image("pit.png");
@@ -31,6 +32,7 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	static ImageView[] pitImageView = new ImageView[2 * GameBase.pitNum];
 	static Text[] pitText = new Text[2 * GameBase.pitNum];
 	static StackPane[] pitTextPane = new StackPane[pitText.length];
+	static Button[] pitButton = new Button[2 * GameBase.pitNum];
 	static Pane[] pitPane = new Pane[2 * GameBase.pitNum]; //To contain the pit and stone images
 
 	public static void main(String[] args) {
@@ -54,7 +56,6 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 
 		storeNorthTextPane.setPrefSize(30, 20);
 		storeNorthTextPane.getChildren().add(storeNorthText);
-//		storeNorthTextPane.setLayoutX(13);
 		storeNorthTextPane.setLayoutY((board.getHeight() - 20) / 2);
 
 		storeNorthPane.setPrefSize(118 + gap / 2, 328);
@@ -93,6 +94,15 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 			pitTextPane[i].getChildren().add(pitText[i]);
 		}
 
+		for (int i = 0; i < pitButton.length; i++) {
+			pitButton[i] = new Button(Integer.toString(i));
+			pitButton[i].setShape(new Circle(88));
+			pitButton[i].setPrefSize(88, 88);
+			pitButton[i].setOnAction(this);
+			pitButton[i].setId("Button");
+
+		}
+
 		for (int i = 0; i < pitImageView.length; i++) {
 			pitPane[i] = new Pane();
 			pitPane[i].setPrefSize(pitImage.getWidth() + gap, 328 / 2);
@@ -104,6 +114,11 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 
 			if (i < pitImageView.length / 2) pitTextPane[i].setLayoutY(30 + 20 + pitImage.getHeight());
 			pitPane[i].getChildren().add(pitTextPane[i]);
+
+			pitButton[i].setLayoutX(gap / 2);
+			if (i < pitImageView.length / 2) pitButton[i].setLayoutY(50);
+			else pitButton[i].setLayoutY(30);
+			pitPane[i].getChildren().add(pitButton[i]);
 		}
 
 		for (int i = 0; i < pitImageView.length / 2; i++) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * i, 328 / 2);
@@ -125,7 +140,11 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 
 	@Override
 	public void handle (ActionEvent event) {
-		System.out.println("clicked");
+		Object object = event.getSource();
+		if (object instanceof Button) {
+			Button button = (Button) object;
+			System.out.println(button.getText());
+		}
 	}
 
 	public static void updateBoard(int[] board) {
