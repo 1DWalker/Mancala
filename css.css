@@ -1,0 +1,11 @@
+#Text {
+	-fx-position: absolute; 
+	-fx-width: 30px; 
+	-fx-text-align: left; 
+	-fx-font-weight: bold; 
+	-fx-font-size: 20px;
+}
+
+#Button {
+	-fx-opacity: 0;
+}
