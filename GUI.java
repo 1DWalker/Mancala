@@ -23,7 +23,7 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	 * 13 | 12 11 10 9 8 7
 	 *       0  1  2 3 4 5 | 6
 	 */
-	static boolean player = false;
+	static boolean player = true;
 	static boolean repeatMove;
 
 	//GUI
@@ -128,7 +128,15 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 			pitButton[i].setShape(new Circle(88));
 			pitButton[i].setPrefSize(88, 88);
 			pitButton[i].setOnAction(this);
-			if (player & i >= pitButton.length / 2) pitButton[i].setDisable(true);
+			if (player) {
+				if (i < pitButton.length / 2) pitButton[i].setDisable(false);
+				else pitButton[i].setDisable(true);
+			}
+
+			if (!player) {
+				if (i >= pitButton.length / 2) pitButton[i].setDisable(false);
+				else pitButton[i].setDisable(true);
+			}
 			pitButton[i].setId("Button");
 
 		}
