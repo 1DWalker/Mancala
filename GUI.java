@@ -6,78 +6,108 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.HPos;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
+import javafx.application.Platform;
 
 public class GUI extends Application implements EventHandler<ActionEvent> {
+
+	static Image board = new Image("board.jpg");
+	static Image store = new Image("store.png");
+	static Image pitImage = new Image("pit.png");
+	static ImageView boardView = new ImageView();
+
+	static ImageView storeNorthView = new ImageView();
+	static Text storeNorthText = new Text("0");
+	static StackPane storeNorthTextPane = new StackPane();
+	static Pane storeNorthPane = new Pane(); //To contain the north store and stone images
+
+	static ImageView storeSouthView = new ImageView();
+	static Text storeSouthText = new Text("0");
+	static StackPane storeSouthTextPane = new StackPane();
+	static Pane storeSouthPane = new Pane(); //To contain the south store and stone images
+
+	static ImageView[] pitImageView = new ImageView[2 * GameBase.pitNum];
+	static Text[] pitText = new Text[2 * GameBase.pitNum];
+	static StackPane[] pitTextPane = new StackPane[pitText.length];
+	static Pane[] pitPane = new Pane[2 * GameBase.pitNum]; //To contain the pit and stone images
 
 	public static void main(String[] args) {
 		launch(args);
 	}
 
 	@Override
-	public void start (Stage primaryStage) {
+	public void start (Stage primaryStage) throws Exception {
 		String css = this.getClass().getResource("css.css").toExternalForm();
+		double gap = (board.getWidth() - 2 * (30 + store.getWidth()) - pitImage.getWidth() * GameBase.pitNum) / (GameBase.pitNum + 1); //The space between pits
+
 		//Board
-		Image board = new Image("board.jpg");
-		ImageView boardView = new ImageView();
 		boardView.setImage(board);
 
-		Image store = new Image("store.png");
-
 		//North store
-		ImageView storeNorthView = new ImageView();
 		storeNorthView.setImage(store);
-		storeNorthView.relocate(43, (board.getHeight() - store.getHeight()) / 2);
+		storeNorthView.setLayoutX(30);
+		storeNorthView.setLayoutY((board.getHeight() - store.getHeight()) / 2);
 
-		Text storeNorthText = new Text("0");
-		storeNorthText.setId("storeText");
+		storeNorthText.setId("Text");
 
-		StackPane storeNorthTextPane = new StackPane();
-		storeNorthTextPane.setPrefSize(30, 30);
+		storeNorthTextPane.setPrefSize(30, 20);
 		storeNorthTextPane.getChildren().add(storeNorthText);
-		storeNorthTextPane.relocate(13, (board.getHeight() - 20) / 2);
+//		storeNorthTextPane.setLayoutX(13);
+		storeNorthTextPane.setLayoutY((board.getHeight() - 20) / 2);
 
-		Pane storeNorthPane = new Pane(); //To contain the north store and stone images
+		storeNorthPane.setPrefSize(118 + gap / 2, 328);
 		storeNorthPane.getChildren().addAll(storeNorthView, storeNorthTextPane);
 
 		//South store
-		ImageView storeSouthView = new ImageView();
 		storeSouthView.setImage(store);
-		storeSouthView.relocate(board.getWidth() - 43 - store.getWidth(), (board.getHeight() - store.getHeight()) / 2);
+		storeSouthView.setLayoutX(gap / 2);
+		storeSouthView.setLayoutY((board.getHeight() - store.getHeight()) / 2);
 
-		Text storeSouthText = new Text("0");
-		storeSouthText.setId("storeText");
+		storeSouthText.setId("Text");
 
-		StackPane storeSouthTextPane = new StackPane();
-		storeSouthTextPane.setPrefSize(30, 30);
+		storeSouthTextPane.setPrefSize(30, 20);
 		storeSouthTextPane.getChildren().add(storeSouthText);
-		storeSouthTextPane.relocate(board.getWidth() - 43, (board.getHeight() - 20) / 2);
+		storeSouthTextPane.setLayoutX(88 + gap / 2);
+		storeSouthTextPane.setLayoutY((board.getHeight() - 20) / 2);
 
-		Pane storeSouthPane = new Pane(); //To contain the south store and stone images
+		storeSouthPane.setPrefSize(118 + gap / 2, 328);
+		storeSouthPane.relocate(board.getWidth() - 118 - gap / 2, 0);
 		storeSouthPane.getChildren().addAll(storeSouthView, storeSouthTextPane);
 
 		//Pits
-		Image pitImage = new Image("pit.png");
-
-		ImageView[] pitImageView = new ImageView[2 * GameBase.pitNum];
-
-		for (int i = 0; i < pitImageView.length; i++) {
+		for (int i = 0; i < pitImageView.length; i++) { //Images
 			pitImageView[i] = new ImageView();
 			pitImageView[i].setImage(pitImage);
 		}
 
-		double gap = (board.getWidth() - 2 * (43 + store.getWidth()) - pitImage.getWidth() * pitImageView.length / 2) / (pitImageView.length / 2 + 1);
-		for (int i = 0; i < pitImageView.length / 2; i++) pitImageView[i].relocate(43 + gap + store.getWidth() + (gap + pitImage.getWidth()) * i, 226);
-		for (int i = pitImageView.length - 1; i >= pitImageView.length / 2; i--) pitImageView[i].relocate(43 + gap + store.getWidth() + (gap + pitImage.getWidth()) * (pitImageView.length - 1 - i), 43);
+		for (int i = 0; i < pitText.length; i++) { //Text
+			pitText[i] = new Text("0");
+			pitText[i].setId("Text");
+		}
 
-		Pane[] pitPane = new Pane[2 * GameBase.pitNum]; //To contain the pit and stone images
+		for (int i = 0; i < pitTextPane.length; i++) {
+			pitTextPane[i] = new StackPane();
+			pitTextPane[i].setPrefSize(pitImage.getWidth() + gap, 20);
+			pitTextPane[i].getChildren().add(pitText[i]);
+		}
+
 		for (int i = 0; i < pitImageView.length; i++) {
 			pitPane[i] = new Pane();
+			pitPane[i].setPrefSize(pitImage.getWidth() + gap, 328 / 2);
+
+			pitImageView[i].setLayoutX(gap / 2);
+			if (i < pitImageView.length / 2) pitImageView[i].setLayoutY(30 + 20);
+			else pitImageView[i].setLayoutY(30);
 			pitPane[i].getChildren().add(pitImageView[i]);
+
+			if (i < pitImageView.length / 2) pitTextPane[i].setLayoutY(30 + 20 + pitImage.getHeight());
+			pitPane[i].getChildren().add(pitTextPane[i]);
 		}
+
+		for (int i = 0; i < pitImageView.length / 2; i++) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * i, 328 / 2);
+		for (int i = pitImageView.length - 1; i >= pitImageView.length / 2; i--) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * (pitImageView.length - 1 - i), 0);
 
 		Pane rootPane = new Pane();
 		rootPane.getChildren().add(boardView);
@@ -85,7 +115,7 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 		rootPane.getChildren().add(storeSouthPane);
 		for (int i = 0; i < pitPane.length; i++) rootPane.getChildren().add(pitPane[i]);
 
-		Scene scene = new Scene(rootPane, 886, 361); //dimensions of board.jpg
+		Scene scene = new Scene(rootPane, 862, 328); //dimensions of board.jpg
 		scene.getStylesheets().add(css);
 
 		primaryStage.setTitle("Mancala");
@@ -96,5 +126,12 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	@Override
 	public void handle (ActionEvent event) {
 		System.out.println("clicked");
+	}
+
+	public static void updateBoard(int[] board) {
+		for (int i = 0; i < GameBase.pitNum; i++) {
+			pitText[i].setText(Integer.toString(board[i]));
+			pitText[i + 6].setText(Integer.toString(i + 6));
+		}
 	}
 }
