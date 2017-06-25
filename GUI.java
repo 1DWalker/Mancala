@@ -1,4 +1,7 @@
 import javafx.application.Application;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
@@ -14,16 +17,20 @@ import javafx.scene.shape.Circle;
 public class GUI extends Application implements EventHandler<ActionEvent> {
 
 	static int pitNum = 6; //Number of boardImages per side
-	static int stoneNum = 1; //Number of starting stones per boardImage
+	static int stoneNum = 6; //Number of starting stones per boardImage
 	static int[] board = new int[pitNum * 2 + 2];
 	/* boardImage representation
 	 * 13 | 12 11 10 9 8 7
 	 *       0  1  2 3 4 5 | 6
 	 */
-	static boolean player = true;
+	static boolean player = false;
 	static boolean repeatMove;
 
 	//GUI
+	static MenuItem newGame = new MenuItem("New Game");
+	static Menu menu = new Menu("File");
+	static MenuBar menuBar = new MenuBar();
+
 	static Image boardImage = new Image("board.jpg");
 	static Image storeImage = new Image("store.png");
 	static Image pitImage = new Image("pit.png");
@@ -45,6 +52,9 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	static Button[] pitButton = new Button[2 * GameBase.pitNum];
 	static Pane[] pitPane = new Pane[2 * GameBase.pitNum]; //To contain the pit and stone images
 
+	static Text gameText = new Text();
+	static StackPane gameTextPane = new StackPane();
+
 	public static void main(String[] args) {
 		setBoard();
 		launch(args);
@@ -54,6 +64,12 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	public void start (Stage primaryStage) throws Exception {
 		String css = this.getClass().getResource("css.css").toExternalForm();
 		double gap = (boardImage.getWidth() - 2 * (30 + storeImage.getWidth()) - pitImage.getWidth() * GameBase.pitNum) / (GameBase.pitNum + 1); //The space between pits
+
+		//Menu
+		newGame.setOnAction(this);
+		menu.getItems().add(newGame);
+		menuBar.prefWidthProperty().bind(primaryStage.widthProperty());
+		menuBar.getMenus().add(menu);
 
 		//boardImage
 		boardImageView.setImage(boardImage);
@@ -138,13 +154,25 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 		for (int i = 0; i < pitImageView.length / 2; i++) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * i, 328 / 2);
 		for (int i = pitImageView.length - 1; i >= pitImageView.length / 2; i--) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * (pitImageView.length - 1 - i), 0);
 
-		Pane rootPane = new Pane();
-		rootPane.getChildren().add(boardImageView);
-		rootPane.getChildren().add(storeImageNorthPane);
-		rootPane.getChildren().add(storeImageSouthPane);
-		for (int i = 0; i < pitPane.length; i++) rootPane.getChildren().add(pitPane[i]);
+		gameText.setText("");
+		gameText.setId("Text");
+		gameTextPane.getChildren().add(gameText);
+		gameTextPane.setPrefSize(862, 328);
 
-		Scene scene = new Scene(rootPane, 862, 328); //dimensions of boardImage.jpg
+		Pane gamePane = new Pane();
+		gamePane.getChildren().add(boardImageView);
+		gamePane.getChildren().add(storeImageNorthPane);
+		gamePane.getChildren().add(storeImageSouthPane);
+		gamePane.getChildren().add(gameTextPane);
+		for (int i = 0; i < pitPane.length; i++) gamePane.getChildren().add(pitPane[i]);
+
+		gamePane.setLayoutY(25);
+
+		Pane mainPane = new Pane();
+		mainPane.getChildren().add(menuBar);
+		mainPane.getChildren().add(gamePane);
+
+		Scene scene = new Scene(mainPane, 862, 353); //dimensions of boardImage.jpg
 		scene.getStylesheets().add(css);
 
 		primaryStage.setTitle("Mancala");
@@ -163,7 +191,7 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 			updateGUI();
 			if (!repeatMove) {
 				player = player ? false : true;
-				for (int i = 0; i < pitButton.length; i++) {
+				for (int i = 0; i < pitButton.length; i++) { //activate or deactivate buttons
 					if (player) {
 						if (i < pitButton.length / 2) pitButton[i].setDisable(false);
 						else pitButton[i].setDisable(true);
@@ -179,11 +207,36 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 			repeatMove = false;
 
 			if (terminal()) {
-				System.out.println("terminal");
 				captureRemainingPieces();
 				printBoard();
 				updateGUI();
 				for (int i = 0; i < pitButton.length; i++) pitButton[i].setDisable(true);
+
+				if (board[pitNum] > board[2 * pitNum + 1]) gameText.setText("Player South wins by " + (board[pitNum] - board[2 * pitNum + 1]) + "!");
+				else if (board[pitNum] == board[2 * pitNum + 1]) gameText.setText("Draw!");
+				else gameText.setText("Player North wins by " + (board[2 * pitNum + 1] - board[pitNum]) + "!");
+			}
+		} else if (object instanceof MenuItem) {
+			MenuItem menuItem = (MenuItem) object;
+			if (menuItem.getText().equals("New Game")) {
+				System.out.println("restart");
+				player = true;
+				for (int i = 0; i < pitButton.length; i++) { //activate or deactivate buttons
+					if (player) {
+						if (i < pitButton.length / 2) pitButton[i].setDisable(false);
+						else pitButton[i].setDisable(true);
+					}
+
+					if (!player) {
+						if (i >= pitButton.length / 2) pitButton[i].setDisable(false);
+						else pitButton[i].setDisable(true);
+					}
+				}
+				setBoard();
+				printBoard();
+				updateGUI();
+
+				gameText.setText("");
 			}
 		}
 	}
