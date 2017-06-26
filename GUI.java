@@ -13,8 +13,15 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 import javafx.scene.shape.Circle;
+import javafx.animation.TranslateTransition;
+import javafx.animation.ParallelTransition;
+import javafx.util.Duration;
+import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
 
 public class GUI extends Application implements EventHandler<ActionEvent> {
+	static Random randomNum = new Random();
 
 	static int pitNum = 6; //Number of boardImages per side
 	static int stoneNum = 6; //Number of starting stones per boardImage
@@ -34,6 +41,8 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	static Image boardImage = new Image("board.jpg");
 	static Image storeImage = new Image("store.png");
 	static Image pitImage = new Image("pit.png");
+	static Image ballImage = new Image("ball.png");
+
 	static ImageView boardImageView = new ImageView();
 
 	static ImageView storeImageNorthView = new ImageView();
@@ -46,14 +55,21 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	static StackPane storeImageSouthTextPane = new StackPane();
 	static Pane storeImageSouthPane = new Pane(); //To contain the south storeImage and stone images
 
-	static ImageView[] pitImageView = new ImageView[2 * GameBase.pitNum];
-	static Text[] pitText = new Text[2 * GameBase.pitNum];
+	static ImageView[] pitImageView = new ImageView[2 * pitNum];
+	static Pane[] pitImagePane = new Pane[2 * pitNum];
+	static Text[] pitText = new Text[2 * pitNum];
 	static StackPane[] pitTextPane = new StackPane[pitText.length];
-	static Button[] pitButton = new Button[2 * GameBase.pitNum];
-	static Pane[] pitPane = new Pane[2 * GameBase.pitNum]; //To contain the pit and stone images
+	static Button[] pitButton = new Button[2 * pitNum];
+	static Pane[] pitPane = new Pane[2 * pitNum]; //To contain the pit and stone images
+
+	static ImageView[] ballImageView = new ImageView[2 * pitNum * stoneNum];
+	static List<Integer>[] ballIndexes = new ArrayList[2 * pitNum + 2];
 
 	static Text gameText = new Text();
 	static StackPane gameTextPane = new StackPane();
+
+	static ParallelTransition sowTransition = new ParallelTransition();
+	static ParallelTransition captureTransition = new ParallelTransition();
 
 	public static void main(String[] args) {
 		setBoard();
@@ -63,7 +79,7 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	@Override
 	public void start (Stage primaryStage) throws Exception {
 		String css = this.getClass().getResource("css.css").toExternalForm();
-		double gap = (boardImage.getWidth() - 2 * (30 + storeImage.getWidth()) - pitImage.getWidth() * GameBase.pitNum) / (GameBase.pitNum + 1); //The space between pits
+		double gap = (boardImage.getWidth() - 2 * (30 + storeImage.getWidth()) - pitImage.getWidth() * pitNum) / (pitNum + 1); //The space between pits
 
 		//Menu
 		newGame.setOnAction(this);
@@ -112,6 +128,12 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 			pitImageView[i].setImage(pitImage);
 		}
 
+		for (int i = 0; i < pitImagePane.length; i++) {
+			pitImagePane[i] = new Pane();
+			pitImagePane[i].setPrefSize(pitImage.getWidth(), pitImage.getHeight());
+			pitImagePane[i].getChildren().add(pitImageView[i]);
+		}
+
 		for (int i = 0; i < pitText.length; i++) { //Text
 			pitText[i] = new Text(Integer.toString(i < pitText.length / 2 ? board[i] : board[i + 1]));
 			pitText[i].setId("Text");
@@ -128,27 +150,25 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 			pitButton[i].setShape(new Circle(88));
 			pitButton[i].setPrefSize(88, 88);
 			pitButton[i].setOnAction(this);
-			if (player) {
-				if (i < pitButton.length / 2) pitButton[i].setDisable(false);
-				else pitButton[i].setDisable(true);
-			}
-
-			if (!player) {
-				if (i >= pitButton.length / 2) pitButton[i].setDisable(false);
-				else pitButton[i].setDisable(true);
-			}
 			pitButton[i].setId("Button");
+		}
 
+		for (int i = 0; i < ballIndexes.length; i++) ballIndexes[i] = new ArrayList<Integer>(); //Initialize ballIndexes
+
+		//Put balls in each pit
+		for (int i = 0; i < ballImageView.length; i++) {
+			ballImageView[i] = new ImageView();
+			ballImageView[i].setImage(ballImage);
 		}
 
 		for (int i = 0; i < pitImageView.length; i++) {
 			pitPane[i] = new Pane();
 			pitPane[i].setPrefSize(pitImage.getWidth() + gap, 328 / 2);
 
-			pitImageView[i].setLayoutX(gap / 2);
-			if (i < pitImageView.length / 2) pitImageView[i].setLayoutY(30 + 20);
-			else pitImageView[i].setLayoutY(30);
-			pitPane[i].getChildren().add(pitImageView[i]);
+			pitImagePane[i].setLayoutX(gap / 2);
+			if (i < pitImagePane.length / 2) pitImagePane[i].setLayoutY(30 + 20);
+			else pitImagePane[i].setLayoutY(30);
+			pitPane[i].getChildren().add(pitImagePane[i]);
 
 			if (i < pitImageView.length / 2) pitTextPane[i].setLayoutY(30 + 20 + pitImage.getHeight());
 			pitPane[i].getChildren().add(pitTextPane[i]);
@@ -162,6 +182,15 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 		for (int i = 0; i < pitImageView.length / 2; i++) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * i, 328 / 2);
 		for (int i = pitImageView.length - 1; i >= pitImageView.length / 2; i--) pitPane[i].relocate(118 + gap / 2 + (gap + pitImage.getWidth()) * (pitImageView.length - 1 - i), 0);
 
+		//Add balls
+		for (int i = 0; i < ballImageView.length; i++) {
+			//Add balls
+			ballImageView[i].setLayoutX(pitPane[i % (2 * pitNum)].getLayoutX() + pitImagePane[i % (2 * pitNum)].getLayoutX() + (pitImage.getWidth() - ballImage.getWidth()) / 2 + 88 * 0.55 * (randomNum.nextDouble() - 0.55));
+			ballImageView[i].setLayoutY(pitPane[i % (2 * pitNum)].getLayoutY() + pitImagePane[i % (2 * pitNum)].getLayoutY() + (pitImage.getHeight() - ballImage.getHeight()) / 2 + 88 * 0.55 * (randomNum.nextDouble() - 0.55));
+
+			ballIndexes[i % (2 * pitNum) < pitNum ? i % (2 * pitNum) : i % (2 * pitNum) + 1].add(i);
+		}
+
 		gameText.setText("");
 		gameText.setId("Text");
 		gameTextPane.getChildren().add(gameText);
@@ -173,6 +202,7 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 		gamePane.getChildren().add(storeImageSouthPane);
 		gamePane.getChildren().add(gameTextPane);
 		for (int i = 0; i < pitPane.length; i++) gamePane.getChildren().add(pitPane[i]);
+		for (int i = 0; i < ballImageView.length; i++) gamePane.getChildren().add(ballImageView[i]);
 
 		gamePane.setLayoutY(25);
 
@@ -194,56 +224,67 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 		if (object instanceof Button) {
 			Button button = (Button) object;
 			System.out.println(button.getText());
+
+			if (!(player && Integer.parseInt(button.getText()) < pitNum) && !(!player && Integer.parseInt(button.getText()) > pitNum)) {
+				System.out.println("Wrong player's move.");
+				return;
+			}
+			if (board[Integer.parseInt(button.getText())] == 0) {
+				System.out.println("blank button");
+				return;
+			}
+
+			for (int i = 0; i < pitButton.length; i++) { //To avoid multiple button presses
+				pitButton[i].setDisable(true);
+			}
+
 			updateBoard(Integer.parseInt(button.getText()));
 			printBoard();
 			updateGUI();
-			if (!repeatMove) {
-				player = player ? false : true;
-				for (int i = 0; i < pitButton.length; i++) { //activate or deactivate buttons
-					if (player) {
-						if (i < pitButton.length / 2) pitButton[i].setDisable(false);
-						else pitButton[i].setDisable(true);
-					}
 
-					if (!player) {
-						if (i >= pitButton.length / 2) pitButton[i].setDisable(false);
-						else pitButton[i].setDisable(true);
-					}
+			captureTransition.setOnFinished((e) -> { //This animation is run in the updateGUI() function
+				if (!repeatMove) {
+					player = player ? false : true;
 				}
-			}
 
-			repeatMove = false;
+				repeatMove = false;
 
-			if (terminal()) {
-				captureRemainingPieces();
-				printBoard();
-				updateGUI();
-				for (int i = 0; i < pitButton.length; i++) pitButton[i].setDisable(true);
+				if (terminal()) {
+					captureRemainingPieces();
+					printBoard();
+					updateGUI();
 
-				if (board[pitNum] > board[2 * pitNum + 1]) gameText.setText("Player South wins by " + (board[pitNum] - board[2 * pitNum + 1]) + "!");
-				else if (board[pitNum] == board[2 * pitNum + 1]) gameText.setText("Draw!");
-				else gameText.setText("Player North wins by " + (board[2 * pitNum + 1] - board[pitNum]) + "!");
-			}
+					if (board[pitNum] > board[2 * pitNum + 1]) gameText.setText("Player South wins by " + (board[pitNum] - board[2 * pitNum + 1]) + " Points!");
+					else if (board[pitNum] == board[2 * pitNum + 1]) gameText.setText("Draw!");
+					else gameText.setText("Player North wins by " + (board[2 * pitNum + 1] - board[pitNum]) + " Points!");
+				}
+
+				for (int i = 0; i < pitButton.length; i++) {
+					pitButton[i].setDisable(false);
+				}
+			});
 		} else if (object instanceof MenuItem) {
 			MenuItem menuItem = (MenuItem) object;
 			if (menuItem.getText().equals("New Game")) {
 				System.out.println("restart");
 				player = true;
-				for (int i = 0; i < pitButton.length; i++) { //activate or deactivate buttons
-					if (player) {
-						if (i < pitButton.length / 2) pitButton[i].setDisable(false);
-						else pitButton[i].setDisable(true);
-					}
-
-					if (!player) {
-						if (i >= pitButton.length / 2) pitButton[i].setDisable(false);
-						else pitButton[i].setDisable(true);
-					}
-				}
 				setBoard();
 				printBoard();
 				updateGUI();
 
+				sowTransition = new ParallelTransition();
+
+				for (int i = 0; i < ballIndexes.length; i++) {
+					int size = ballIndexes[i].size();
+					for (int k = 0; k < size; k++) {
+						int end = ballIndexes[i].get(k) % (2 * pitNum) < pitNum ? ballIndexes[i].get(k) % (2 * pitNum) : ballIndexes[i].get(k) % (2 * pitNum) + 1;
+						if (ballIndexes[i].size() == 0) break;
+						addAnimation(k, i, end, sowTransition);
+						k--;
+						size--;
+					}
+				}
+				sowTransition.play();
 				gameText.setText("");
 			}
 		}
@@ -264,20 +305,26 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 	}
 
 	public static void captureRemainingPieces() { //At the end of the game, all the pieces belonging to one's side are captured.
+		captureTransition = new ParallelTransition();
+
 		for (int i = 0; i < board.length; i++) {
 			if (i == pitNum || i == 2 * pitNum + 1) continue;
 			if (i < pitNum) {
 				board[pitNum] += board[i];
 				board[i] = 0;
+				while (ballIndexes[i].size() != 0) addAnimation(0, i, pitNum, captureTransition);
 			} else {
 				board[2 * pitNum + 1] += board[i];
 				board[i] = 0;
+				while (ballIndexes[i].size() != 0) addAnimation(0, i, 2 * pitNum + 1, captureTransition);
 			}
 		}
+
+		captureTransition.play();
 	}
 
 	public static void updateGUI() {
-		for (int i = 0; i < GameBase.pitNum; i++) {
+		for (int i = 0; i < pitNum; i++) {
 			pitText[i].setText(Integer.toString(board[i]));
 			pitText[i + 6].setText(Integer.toString(board[i + 7]));
 		}
@@ -303,6 +350,8 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 		board[sowLocation] = 0;
 		sowLocation++;
 
+		sowTransition = new ParallelTransition();
+		captureTransition = new ParallelTransition();
 		for (int i = 0; i < numberOfStones; i++) {
 			if ((player && sowLocation == 2 * pitNum + 1) || (!player && sowLocation == pitNum)) { //Cannot sow the opponent's store
 				i--;
@@ -316,13 +365,65 @@ public class GUI extends Application implements EventHandler<ActionEvent> {
 				else if (board[sowLocation] == 0 && (player && (sowLocation < pitNum) || !player && (sowLocation > pitNum) )) {
 					board[sowLocation < pitNum ? pitNum : 2 * pitNum + 1] += 1 + board[Math.abs(2 * pitNum - sowLocation)];
 					board[Math.abs(2 * pitNum - sowLocation)] = 0;
+
+					//Animation for last stone sown
+					addAnimation(0, move, sowLocation, sowTransition);
+					addAnimation(0, sowLocation, move < pitNum ? pitNum : 2 * pitNum + 1, captureTransition);
+
+					//Animation for the captured opposing stones
+					while (ballIndexes[Math.abs(2 * pitNum - sowLocation)].size() != 0) {
+						addAnimation(0, Math.abs(2 * pitNum - sowLocation), move < pitNum ? pitNum : 2 * pitNum + 1, captureTransition);
+					}
 					break;
 				}
 			}
 
+			//Animation
+			addAnimation(0, move, sowLocation, sowTransition);
+
 			board[sowLocation]++;
 			sowLocation++;
 		}
+
+		sowTransition.play();
+		sowTransition.setOnFinished((e) -> {
+			captureTransition.play();
+		});
+	}
+
+	public static void addAnimation(int index, int start, int end, ParallelTransition parallelTransition) { //Start and end are positions of the board
+		if (ballIndexes[start].size() == 0) {
+			System.out.println("No balls");
+			return;
+		}
+
+		int nodeNumber = ballIndexes[start].get(index);
+		ballIndexes[start].remove(index);
+		ballIndexes[end].add(nodeNumber);
+		int pitIndex = -1;
+		boolean storeSouth = false;
+		boolean storeNorth = false;
+		if (end < pitNum) pitIndex = end;
+		else if (end == pitNum) storeSouth = true;
+		else if (end == 2 * pitNum + 1) storeNorth = true;
+		else pitIndex = end - 1;
+
+		TranslateTransition transition = new TranslateTransition();
+		transition.setDuration(Duration.millis(800));
+		transition.setNode(ballImageView[nodeNumber]);
+		if (!storeSouth & !storeNorth) {
+			transition.setToX(pitPane[pitIndex].getLayoutX() + pitImagePane[pitIndex].getLayoutX() + (pitImage.getWidth() - ballImage.getWidth()) / 2 + 88 * 0.55 * (randomNum.nextDouble() - 0.55) - ballImageView[nodeNumber].getLayoutX());
+			transition.setToY(pitPane[pitIndex].getLayoutY() + pitImagePane[pitIndex].getLayoutY() + (pitImage.getHeight() - ballImage.getHeight()) / 2 + 88 * 0.55 * (randomNum.nextDouble() - 0.55) - ballImageView[nodeNumber].getLayoutY());
+		} else {
+			if (storeSouth) {
+				transition.setToX(storeImageSouthPane.getLayoutX() + storeImageSouthView.getLayoutX() + (storeImage.getWidth() - ballImage.getWidth()) / 2 + 88 * 0.75 * (randomNum.nextDouble() - 0.55) - ballImageView[nodeNumber].getLayoutX());
+				transition.setToY(storeImageSouthPane.getLayoutY() + storeImageSouthView.getLayoutY() + (storeImage.getHeight() - ballImage.getHeight()) / 2 + 179 * 0.75 * (randomNum.nextDouble() - 0.55) - ballImageView[nodeNumber].getLayoutY());
+			} else {
+				transition.setToX(storeImageNorthPane.getLayoutX() + storeImageNorthView.getLayoutX() + (storeImage.getWidth() - ballImage.getWidth()) / 2 + 88 * 0.75 * (randomNum.nextDouble() - 0.55) - ballImageView[nodeNumber].getLayoutX());
+				transition.setToY(storeImageNorthPane.getLayoutY() + storeImageNorthView.getLayoutY() + (storeImage.getHeight() - ballImage.getHeight()) / 2 + 179 * 0.75 * (randomNum.nextDouble() - 0.55) - ballImageView[nodeNumber].getLayoutY());
+			}
+		}
+		parallelTransition.getChildren().add(transition);
 	}
 
 	public static void printBoard() {
