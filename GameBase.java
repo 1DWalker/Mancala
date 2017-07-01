@@ -1,37 +1,110 @@
 import java.util.Scanner;
+import org.apache.commons.math3.special.Erf; //For Likelihood of Superiority test. Test to see how LOS behaves, then decide how to use it.
 
 public class GameBase {
 
 	static int pitNum = 6; //Number of boards per side
-	static int stoneNum = 10; //Number of starting stones per board
+	static int stoneNum = 4; //Number of starting stones per board
+	static boolean easyCapture = false;
+
 	static int[] board = new int[pitNum * 2 + 2];
 	/* Board representation
 	 * 13 | 12 11 10 9 8 7
 	 *       0  1  2 3 4 5 | 6
 	 */
-	static boolean player;
+	static boolean player = true;
+	static boolean startingPlayer = true; //Used to determine which player starts
 	static boolean repeatMove;
 
-	public static void main(String[] args) {
-		setBoard();
-		player = true; //true for the south player, false for the north player
+	//Statistics in the perspective of the South player
+	static int wins = 0;
+	static int losses = 0;
+	static int draws = 0;
 
-		printBoard();
+	public static void main(String[] args) {
+		AI.initialize();
+
+		//Control Options
+		int[] options = new int[5];
+		options[0] = 0; //Print board
+		options[1] = 1; //Switch sides after every game
+		//Print board & stats at the end of the game
+		options[2] = 1;
+		//Computer One. Computer One always plays the south side
+		options[3] = 1;
+		//Computer Two. Computer Two always plays the north side
+		options[4] = 1;
+
+		//Time control settings
+		long[] timeControl = new long[2];
+		//beginning time in milliseconds (1000 milliseconds = 1 second)
+		timeControl[0] = 6000;
+		//incremental time in milliseconds
+		timeControl[1] = 600;
+
+		//2. Match with n games
+		int n = 100000; //# of games
+		for (int i = 1; i <= n; i++) game(n, options, timeControl, i);
+	}
+
+	public static void game(int n, int[] options, long[] timeControl, int i) { //Need to implement n, options, timeControl
+		setBoard();
+
+		int gameLength = 0;
+		boolean newGame = true;
+		int lastMoveCoordinates = -1; //For the AI to use to update memory
+
+		if (options[0] == 1) printBoard();
 		while (!terminal()) {
 			repeatMove = false;
-			int move = playerMove();
+			int move;
+//			if (player && options[3] == 1) move = AI.findMove(board, lastMoveCoordinates, timeControl, 0, newGame, true);
+			if (player && options[3] == 1) move = AI.findMove(board, -1, timeControl, 0, true, true);
+			else if (!player && options[4] == 1) move = AI2.findMove(board);
+			else move = playerMove();
+
+			lastMoveCoordinates = move;
+
 			updateBoard(move);
-			printBoard();
+			if (options[0] == 1) printBoard();
 			if (repeatMove) continue;
 			player = player ? false : true;
+
+//			try {
+//				Thread.sleep(5000);
+//			} catch (InterruptedException e) {
+//
+//				System.out.println("error");
+//			}
+			gameLength++;
+			if (gameLength == 2) newGame = false;
 		}
 
+		if (board[pitNum] > board[2 * pitNum + 1]) wins++;
+		else if (board[pitNum] == board[2 * pitNum + 1]) draws++;
+		else losses++;
+
 		captureRemainingPieces();
-		printBoard();
-		System.out.print("Game over. ");
-		if (board[pitNum] > board[2 * pitNum + 1]) System.out.println("Player South wins by " + (board[pitNum] - board[2 * pitNum + 1]) + "!");
-		else if (board[pitNum] == board[2 * pitNum + 1]) System.out.println("Draw!");
-		else System.out.println("Player North wins by " + (board[2 * pitNum + 1] - board[pitNum]) + "!");
+		if (options[2] == 1) {
+			printBoard();
+			System.out.print("Game over. ");
+			if (board[pitNum] > board[2 * pitNum + 1]) System.out.println("Player South wins by " + (board[pitNum] - board[2 * pitNum + 1]) + "!");
+			else if (board[pitNum] == board[2 * pitNum + 1]) System.out.println("Draw!");
+			else System.out.println("Player North wins by " + (board[2 * pitNum + 1] - board[pitNum]) + "!");
+
+			System.out.println("W-L-D " + wins + "-" + losses + "-" + draws + ". " + i + " out of " + n + " games completed.");
+			System.out.println("Elo difference: " + (-400.0 * Math.log((1.0 / ((wins + 0.5 * draws) / i)) - 1) / Math.log(10.0)));
+			//https://chessprogramming.wikispaces.com/Match+Statistics
+			System.out.println("LOS: " + (0.5 + 0.5 * Erf.erf((wins - losses) / Math.sqrt(2.0 * (wins + losses)))));
+
+		}
+
+		//Determine the starting player for the next game
+		if (options[1] == 0) player = true; //true for the south player, false for the north player
+		else {
+			startingPlayer = startingPlayer ? false : true;
+			player = startingPlayer;
+		}
 	}
 
 	public static boolean terminal() {
@@ -54,6 +127,7 @@ public class GameBase {
 			board[2 * pitNum - i] = stoneNum;
 		}
 
+		board[2] = 0;
 		board[pitNum] = 0;
 		board[2 * pitNum + 1] = 0;
 	}
@@ -132,7 +206,6 @@ public class GameBase {
 
 		System.out.println();
 		System.out.println();
-
 	}
 
 	public static int playerMove() {
@@ -158,7 +231,7 @@ public class GameBase {
 			}
 
 			System.out.println();
-			keyboard.close();
+//			keyboard.close();
 			return move;
 		}
 	}
@@ -183,9 +256,11 @@ public class GameBase {
 			if (i == numberOfStones - 1) {
 				if (sowLocation == pitNum || sowLocation == 2 * pitNum + 1) repeatMove = true;
 				else if (board[sowLocation] == 0 && (player && (sowLocation < pitNum) || !player && (sowLocation > pitNum) )) {
-					board[sowLocation < pitNum ? pitNum : 2 * pitNum + 1] += 1 + board[Math.abs(2 * pitNum - sowLocation)];
-					board[Math.abs(2 * pitNum - sowLocation)] = 0;
-					break;
+					if (easyCapture || (!easyCapture && board[Math.abs(2 * pitNum - sowLocation)] != 0)) {
+						board[sowLocation < pitNum ? pitNum : 2 * pitNum + 1] += 1 + board[Math.abs(2 * pitNum - sowLocation)];
+						board[Math.abs(2 * pitNum - sowLocation)] = 0;
+						break;
+					}
 				}
 			}
 
