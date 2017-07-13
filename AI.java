@@ -11,7 +11,7 @@ public class AI {
 
 	static int pitNum = 6; //Number of boards per side
 	static int stoneNum = 6; //Number of starting stones per board
-	static boolean easyCapture = false;
+	static boolean easyCapture = true;
 
 	static int rootPlayer;
 	static int currentPlayer;
@@ -58,37 +58,24 @@ public class AI {
 
 	public static void initialize() { //This function is to be called outside of this class to save time when allocating space in the ram
 		for (int i = 0; i < childNodes.length; i++) childNodes[i] = new ArrayList<Integer>();
+		clearAllMemory();
 	}
 
-	public static int findMove(int[] board, int lastMove, long[] timeControl, long playerTime, boolean newGame, boolean south) {
+	public static int findMove(int[] board, List<Integer> lastMoves, long[] timeControl, long playerTime, boolean newGame, boolean south) {
     	timeBegin = System.currentTimeMillis();
     	timeTarget = Math.max(playerTime * 4 / 5 - timeControl[1], tolerance);
 		gameLength += 2;
+    	rootMemoryIndex = 0;
 
-    	if (newGame) { //If there is a new game, clear all of the memory
-    		clearAllMemory();
-    		rootMemoryIndex = 0;
-    	} else {
-    		int index = childNodes[rootMemoryIndex].indexOf(lastMove);
-    		if (index != -1) { //If the program has seen the last move before, start the root index at that node
-    			rootMemoryIndex = index;
-    			filterMemory();
-    		} else { //If the program hasn't seen the last move before, clear all of the memory
-        		clearAllMemory();
-        		rootMemoryIndex = 0;
-    		}
-    	}
+		filterMemory();
 
     	memoryUsed = false;
 		memoryCursor = 1;
 
 		setRootBoard(board);
 
-		if (lastMove == -1) rootPlayer = 1;
-		else {
-			if (lastMove < pitNum) rootPlayer = 2;
-			else rootPlayer = 1;
-		}
+		if (south) rootPlayer = 1;
+		else rootPlayer = 2;
 
 		return search(timeControl, playerTime, south);
 	}
@@ -111,13 +98,38 @@ public class AI {
 		}
 	}
 
-	public static void filterMemory() {}
+	public static void filterMemory() {
+		for (int i = 0; i < parentNodes.length; i++) {
+			if (parentNodes[i] != -1) {
+				childNodes[i].clear();
+				parentNodes[i] = -1;
+				moveOfNode[i] = -1;
+				winCount[i] = 0;
+				lossCount[i] = 0;
+				drawCount[i] = 0;
+				totalVisits[i] = 0;
+				fullyExpanded[i] = false;
+				lastSowStore[i] = false;
+			}
+		}
+
+		childNodes[0].clear();
+		parentNodes[0] = -1;
+		moveOfNode[0] = -1;
+		winCount[0] = 0;
+		lossCount[0] = 0;
+		drawCount[0] = 0;
+		totalVisits[0] = 0;
+		fullyExpanded[0] = false;
+		lastSowStore[0] = false;
+	}
 
 	public static int search(long[] timeControl, long playerTime, boolean south) {
     	simulations = 0; //testing purposes
 
     	while (computationalBudget(timeControl, playerTime)) {
     		int newMemoryIndex = treePolicy();
+    		if (newMemoryIndex == -1)  return bestNode();
     		double result = defaultPolicy(newMemoryIndex);
     		backup(newMemoryIndex, result);
     	}
@@ -126,10 +138,17 @@ public class AI {
 	}
 
 	public static boolean computationalBudget(long[] timeControl, long playerTime) {
+    	timeEnd = System.currentTimeMillis();
+    	simulations++;
 //		System.out.println(simulations);
-		simulations++;
-    	if (simulations <= 1) return true;
-    	return false;
+
+    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
+//    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
+
+    	return true;
+
+//    	if (simulations <= 100000) return true;
+//    	return false;
 	}
 
 	public static int treePolicy() {
@@ -158,6 +177,12 @@ public class AI {
     		gameDepth++;
     	}
 
+//    	if (bestChild == -1) {
+////    		printBoard(rootBoard);
+////    		System.exit(0);
+//    		return -1;
+//    	}
+
     	return bestChild;
 	}
 
@@ -165,9 +190,47 @@ public class AI {
  		savedPlayer = currentPlayer;
 
  		//Remember not to change if repeat move
-		currentPlayer = currentPlayer == 1 ? 2 : 1;
+//		currentPlayer = currentPlayer == 1 ? 2 : 1;
 
-		if (terminal(currentBoard)) captureRemainingPieces(currentBoard);
+		while (!terminal(currentBoard)) {
+	    	boolean[] possibleMoves = new boolean[pitNum];
+	    	for (int i = 0; i < possibleMoves.length; i++) possibleMoves[i] = true;
+
+	    	int numberOfPossibleMoves = pitNum;
+
+	    	//Illegal moves are ignored
+	    	int playerAdjustment = currentPlayer == 1 ? 0 : pitNum + 1; //To adjust for which player it is when looking at the board
+	    	for (int i = 0; i < pitNum; i++) {
+	    		if (possibleMoves[i] == false) continue;
+	    		if (currentBoard[i + playerAdjustment] == 0) {
+	    			possibleMoves[i] = false;
+	    			numberOfPossibleMoves--;
+	    		}
+	    	}
+
+	    	if (numberOfPossibleMoves == 0) {
+	    		System.out.println("Error");
+	    		System.exit(0);
+	    	}
+
+	    	int i;
+	    	int randomExpand = randomNum.nextInt(numberOfPossibleMoves) + 1;
+	     	for (i = 0; i < randomExpand; i++) {
+	    		if (!possibleMoves[i]) randomExpand++;
+	    	}
+
+	    	i -= 1;
+
+	    	updateBoard(i, currentPlayer == 1 ? true : false, currentBoard);
+	    	if (repeatMove) {
+				repeatMove = false;
+	    		continue;
+	    	}
+
+			currentPlayer = currentPlayer == 1 ? 2 : 1;
+		}
+
+		captureRemainingPieces(currentBoard);
 
 		if (currentBoard[pitNum] > currentBoard[currentBoard.length - 1]) {
 			if (savedPlayer == 1) return winScore;
@@ -209,24 +272,35 @@ public class AI {
 
 	public static int bestNode() { //Calculate the best node based on search
     	double highScore = -2;
-    	int bestNode = 0;
+    	int bestNode = -1;
 
     	for (int i = 0; i < childNodes[rootMemoryIndex].size(); i++) {
 			double score = winScore * winCount[childNodes[rootMemoryIndex].get(i)] + lossScore * lossCount[childNodes[rootMemoryIndex].get(i)] + drawScore * drawCount[childNodes[rootMemoryIndex].get(i)];
 			int visits = totalVisits[childNodes[rootMemoryIndex].get(i)];
 			double percentScore = score / visits;
 
-//			System.out.println("Move : " + (moveOfNode[childNodes[rootMemoryIndex].get(i)] + 1) + " Scoretotal: " + percentScore + " visits: " + visits);
+//			System.out.println("Move : " + (rootPlayer == 1 ? moveOfNode[childNodes[rootMemoryIndex].get(i)] + 1 : (6 - moveOfNode[childNodes[rootMemoryIndex].get(i)])) + " Scoretotal: " + (percentScore + 1) / 2 + " visits: " + visits);
 			if (percentScore > highScore) {
     			highScore = percentScore;
     			bestNode = i;
     		}
     	}
 
-//    	System.out.println("Best Move: " + (moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1));
-//    	System.out.println("Score: " + highScore);
+    	if (bestNode == -1) {
+    	   	//Illegal moves are ignored
+        	int playerAdjustment = rootPlayer == 1 ? 0 : pitNum + 1; //To adjust for which player it is when looking at the board
+        	for (int i = 0; i < pitNum; i++) {
+        		if (currentBoard[i + playerAdjustment] != 0) {
+        			return rootPlayer == 1 ? i + 1 : (6 - i);
+        		}
+        	}
+    	}
+
+    	System.out.println(rootPlayer == 1 ? "[South]" : "[North]" + " Best Move: " + (rootPlayer == 1 ? moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1 : (6 - moveOfNode[childNodes[rootMemoryIndex].get(bestNode)])));
+    	System.out.println("Score: " + (highScore + 1) / 2);
+    	System.out.println((double) simulations / (timeEnd - timeBegin) + " kN/s");
 //		System.exit(0);
-		return moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1;
+		return rootPlayer == 1 ? moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1 : (6 - moveOfNode[childNodes[rootMemoryIndex].get(bestNode)]); //Adjust for the actual board domain
 	}
 
 	public static void setRootBoard(int[] board) {
@@ -242,15 +316,34 @@ public class AI {
 	}
 
 	public static boolean terminal(int[] board) {
+//		for (int i = 0; i < pitNum; i++) {
+//			if (board[i] != 0) break;
+//			if (i == pitNum - 1) return true;
+//		}
+//
+//		for (int i = pitNum + 1; i < 2 * pitNum + 1; i++) {
+//			if (board[i] != 0) break;
+//			if (i == 2 * pitNum) return true;
+//		}
+//
+		int stoneSum = 0;
+		int sum = 0;
+
 		for (int i = 0; i < pitNum; i++) {
-			if (board[i] != 0) break;
-			if (i == pitNum - 1) return true;
+			sum += board[i];
 		}
 
+		if (sum == 0) return true;
+		stoneSum += sum;
+		sum = 0;
+
 		for (int i = pitNum + 1; i < 2 * pitNum + 1; i++) {
-			if (board[i] != 0) break;
-			if (i == 2 * pitNum) return true;
+			sum += board[i];
 		}
+		if (sum == 0) return true;
+		stoneSum += sum;
+
+		if (board[pitNum] > board[board.length - 1] + stoneSum || board[board.length - 1] > board[pitNum] + stoneSum) return true;
 		return false;
 	}
 
@@ -286,38 +379,15 @@ public class AI {
 
     	if (numberOfPossibleMoves == 1) fullyExpanded[currentMemoryIndex] = true;
 
-//    	boolean[] possibleMoves = {true, false, true, false, false, true};
-//    	int randomExpand = 3;
     	//Select move to expand on random
     	int i;
     	int randomExpand = randomNum.nextInt(numberOfPossibleMoves) + 1;
-//    	try {
-//    		Thread.sleep(100);
-//    	} catch (InterruptedException e) {}
 
      	for (i = 0; i < randomExpand; i++) {
     		if (!possibleMoves[i]) randomExpand++;
     	}
 
     	i -= 1;
-
-//    	do {
-//    		if (!possibleMoves[i]) {
-//    			i++;
-//    			randomExpand++;
-//    			continue;
-//    		}
-//    		i++;
-//    	} while (i < randomExpand);
-
-//    	System.out.println("number of possible moves " + numberOfPossibleMoves);
-//    	for (int z = 0; z < possibleMoves.length; z++) {
-//    		System.out.print(possibleMoves[z] + " ");
-//    		System.out.println();
-//    	}
-//    	System.out.println("i " + i);
-
-//    	System.exit(0);
     	currentMove = i;
     	return false;
 	}
@@ -373,24 +443,10 @@ public class AI {
 				bestChild = i;
 			}
 		}
-//
-//		System.out.println("Best Child " + bestChild);
-//		System.out.println("Player " + currentPlayer);
-//		System.out.println("Move " + moveOfNode[childNodes[currentMemoryIndex].get(bestChild)]);
-//		System.exit(0);
-//		printBoard(currentBoard);
 
 		updateBoard(moveOfNode[childNodes[currentMemoryIndex].get(bestChild)], currentPlayer == 1 ? true : false, currentBoard);
 		if (lastSowStore[childNodes[currentMemoryIndex].get(bestChild)]) repeatMove = true; //If the last move is a sow, the player moves again
-//		System.out.println("currentMemoryPosition " + currentMemoryIndex + "child " + childNodes[currentMemoryIndex].get(bestChild));
     	currentMemoryIndex = childNodes[currentMemoryIndex].get(bestChild);
-//		printBoard(currentBoard);
-
-//		System.out.println("gap");
-
-//    	try {
-//    		Thread.sleep(100);
-//    	} catch (InterruptedException e) {}
 		return currentMemoryIndex;
 	}
 
