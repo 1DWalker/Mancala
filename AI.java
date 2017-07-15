@@ -200,8 +200,18 @@ public class AI {
 
 	    	//Illegal moves are ignored
 	    	int playerAdjustment = currentPlayer == 1 ? 0 : pitNum + 1; //To adjust for which player it is when looking at the board
+			if (currentBoard[pitNum - 1 + playerAdjustment] == 1) {
+		    	updateBoard(pitNum - 1, currentPlayer == 1 ? true : false, currentBoard);
+		    	if (repeatMove) {
+					repeatMove = false;
+		    		continue;
+		    	}
+
+				currentPlayer = currentPlayer == 1 ? 2 : 1;
+				continue;
+			}
+
 	    	for (int i = 0; i < pitNum; i++) {
-	    		if (possibleMoves[i] == false) continue;
 	    		if (currentBoard[i + playerAdjustment] == 0) {
 	    			possibleMoves[i] = false;
 	    			numberOfPossibleMoves--;
@@ -296,9 +306,9 @@ public class AI {
         	}
     	}
 
-    	System.out.println(rootPlayer == 1 ? "[South]" : "[North]" + " Best Move: " + (rootPlayer == 1 ? moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1 : (6 - moveOfNode[childNodes[rootMemoryIndex].get(bestNode)])));
-    	System.out.println("Score: " + (highScore + 1) / 2);
-    	System.out.println((double) simulations / (timeEnd - timeBegin) + " kN/s");
+//    	System.out.println(rootPlayer == 1 ? "[South]" : "[North]" + " Best Move: " + (rootPlayer == 1 ? moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1 : (6 - moveOfNode[childNodes[rootMemoryIndex].get(bestNode)])));
+//    	System.out.println("Score: " + (highScore + 1) / 2);
+//    	System.out.println((double) simulations / (timeEnd - timeBegin) + " kN/s");
 //		System.exit(0);
 		return rootPlayer == 1 ? moveOfNode[childNodes[rootMemoryIndex].get(bestNode)] + 1 : (6 - moveOfNode[childNodes[rootMemoryIndex].get(bestNode)]); //Adjust for the actual board domain
 	}
