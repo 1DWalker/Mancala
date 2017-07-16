@@ -142,13 +142,13 @@ public class AI {
     	simulations++;
 //		System.out.println(simulations);
 
-    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
-//    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
+//    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
+////    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
+//
+//    	return true;
 
-    	return true;
-
-//    	if (simulations <= 500) return true;
-//    	return false;
+    	if (simulations <= 500) return true;
+    	return false;
 	}
 
 	public static int treePolicy() {
@@ -201,30 +201,6 @@ public class AI {
 
 	    	//Illegal moves are ignored
 	    	int playerAdjustment = currentPlayer == 1 ? 0 : pitNum + 1; //To adjust for which player it is when looking at the board
-
-	    	//Find free points
-			if (currentBoard[pitNum - 1 + playerAdjustment] == 1) {
-		    	updateBoard(pitNum - 1, currentPlayer == 1 ? true : false, currentBoard);
-				repeatMove = false;
-	    		continue;
-			} else if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
-				if (currentBoard[pitNum - 2 + playerAdjustment] == 2){
-			    	updateBoard(pitNum - 2, currentPlayer == 1 ? true : false, currentBoard);
-					repeatMove = false;
-		    		continue;
-				}
-			}
-
-			//Play moves that repeat the turn
-//			if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
-//				for (int i = pitNum - 2; i >= 0; i--) {
-//					if (currentBoard[i + playerAdjustment] == pitNum - i) {
-//				    	updateBoard(i, currentPlayer == 1 ? true : false, currentBoard);
-//						repeatMove = false;
-//			    		continue;
-//					}
-//				}
-//			}
 
 			//Play moves that repeat the turn
 			for (int i = pitNum - 1; i >= 0; i--) {
