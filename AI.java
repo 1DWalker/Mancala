@@ -142,13 +142,13 @@ public class AI {
     	simulations++;
 //		System.out.println(simulations);
 
-//    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
-////    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
-//
-//    	return true;
+    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
+//    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
 
-    	if (simulations <= 500) return true;
-    	return false;
+    	return true;
+
+//    	if (simulations <= 500) return true;
+//    	return false;
 	}
 
 	public static int treePolicy() {
@@ -402,8 +402,26 @@ public class AI {
     		numberOfPossibleMoves--;
     	}
 
-    	//Illegal moves are ignored
     	int playerAdjustment = currentPlayer == 1 ? 0 : pitNum + 1; //To adjust for which player it is when looking at the board
+    	//Find free 1 or 2 points
+    	FreeMove:
+		if (currentBoard[pitNum - 1 + playerAdjustment] == 1) {
+			if (possibleMoves[pitNum - 1] == false) break FreeMove;
+	    	updateBoard(pitNum - 1, currentPlayer == 1 ? true : false, currentBoard);
+    		fullyExpanded[currentMemoryIndex] = true;
+        	currentMove = pitNum - 1;
+    		return false;
+		} else if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
+			if (possibleMoves[pitNum - 2] == false) break FreeMove;
+			if (currentBoard[pitNum - 2 + playerAdjustment] == 2){
+		    	updateBoard(pitNum - 2, currentPlayer == 1 ? true : false, currentBoard);
+	    		fullyExpanded[currentMemoryIndex] = true;
+	        	currentMove = pitNum - 2;
+				return false;
+			}
+		}
+
+    	//Illegal moves are ignored
     	for (int i = 0; i < pitNum; i++) {
     		if (possibleMoves[i] == false) continue;
     		if (currentBoard[i + playerAdjustment] == 0) {
