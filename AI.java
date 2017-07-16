@@ -142,13 +142,13 @@ public class AI {
     	simulations++;
 //		System.out.println(simulations);
 
-    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
-//    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
+//    	if (playerTime - (timeEnd - timeBegin) <= timeTarget) return false;
+////    	if (timeEnd - timeBegin >= 1000) return false; //Time per move.
+//
+//    	return true;
 
-    	return true;
-
-//    	if (simulations <= 500) return true;
-//    	return false;
+    	if (simulations <= 500) return true;
+    	return false;
 	}
 
 	public static int treePolicy() {
@@ -407,19 +407,20 @@ public class AI {
     	FreeMove:
 		if (currentBoard[pitNum - 1 + playerAdjustment] == 1) {
 			if (possibleMoves[pitNum - 1] == false) break FreeMove;
-	    	updateBoard(pitNum - 1, currentPlayer == 1 ? true : false, currentBoard);
     		fullyExpanded[currentMemoryIndex] = true;
         	currentMove = pitNum - 1;
     		return false;
 		} else if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
 			if (possibleMoves[pitNum - 2] == false) break FreeMove;
 			if (currentBoard[pitNum - 2 + playerAdjustment] == 2){
-		    	updateBoard(pitNum - 2, currentPlayer == 1 ? true : false, currentBoard);
 	    		fullyExpanded[currentMemoryIndex] = true;
 	        	currentMove = pitNum - 2;
 				return false;
 			}
 		}
+
+    	//Prioritize moves that lead to a capture
+
 
     	//Illegal moves are ignored
     	for (int i = 0; i < pitNum; i++) {
