@@ -147,7 +147,7 @@ public class AI {
 
     	return true;
 
-//    	if (simulations <= 100000) return true;
+//    	if (simulations <= 1000) return true;
 //    	return false;
 	}
 
@@ -192,6 +192,7 @@ public class AI {
  		//Remember not to change if repeat move
 //		currentPlayer = currentPlayer == 1 ? 2 : 1;
 
+ 		PlayMove:
 		while (!terminal(currentBoard)) {
 	    	boolean[] possibleMoves = new boolean[pitNum];
 	    	for (int i = 0; i < possibleMoves.length; i++) possibleMoves[i] = true;
@@ -200,27 +201,76 @@ public class AI {
 
 	    	//Illegal moves are ignored
 	    	int playerAdjustment = currentPlayer == 1 ? 0 : pitNum + 1; //To adjust for which player it is when looking at the board
+
+	    	//Find free points
 			if (currentBoard[pitNum - 1 + playerAdjustment] == 1) {
 		    	updateBoard(pitNum - 1, currentPlayer == 1 ? true : false, currentBoard);
-		    	if (repeatMove) {
-					repeatMove = false;
-		    		continue;
-		    	}
-
-				currentPlayer = currentPlayer == 1 ? 2 : 1;
-				continue;
+				repeatMove = false;
+	    		continue;
 			} else if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
 				if (currentBoard[pitNum - 2 + playerAdjustment] == 2){
 			    	updateBoard(pitNum - 2, currentPlayer == 1 ? true : false, currentBoard);
-			    	if (repeatMove) {
-						repeatMove = false;
-			    		continue;
-			    	}
+					repeatMove = false;
+		    		continue;
+				}
+//				} else if (currentBoard[pitNum - 2 + playerAdjustment] == 0) {
+//					if (currentBoard[pitNum - 3 + playerAdjustment] == 3){
+//				    	updateBoard(pitNum - 3, currentPlayer == 1 ? true : false, currentBoard);
+//						repeatMove = false;
+//			    		continue;
+//					}
+//				}
+			}
 
-					currentPlayer = currentPlayer == 1 ? 2 : 1;
-					continue;
+			//Play moves that repeat the turn
+//			if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
+//				for (int i = pitNum - 2; i >= 0; i--) {
+//					if (currentBoard[i + playerAdjustment] == pitNum - i) {
+//				    	updateBoard(i, currentPlayer == 1 ? true : false, currentBoard);
+//						repeatMove = false;
+//			    		continue;
+//					}
+//				}
+//			}
+
+			//Play moves that repeat the turn
+			for (int i = pitNum - 2; i >= 0; i--) {
+				if (currentBoard[i + playerAdjustment] == pitNum - i) {
+			    	updateBoard(i, currentPlayer == 1 ? true : false, currentBoard);
+					repeatMove = false;
+		    		continue PlayMove;
 				}
 			}
+
+			//Capture if possible searching from right to left
+//			for (int i = 0 + playerAdjustment; i <= pitNum - 2 + playerAdjustment; i++) {
+//				if (currentBoard[i] == 0) continue;
+//				int lastSowIndex = (i + currentBoard[i]) % (2 * pitNum + 1);
+//				if (lastSowIndex == pitNum || lastSowIndex == currentBoard.length - 1) continue;
+//				if ((currentPlayer == 1 && lastSowIndex > pitNum) || (currentPlayer == 2 && lastSowIndex < pitNum)) continue;
+//				if (currentBoard[lastSowIndex] == 0 && currentBoard[2 * pitNum - lastSowIndex] >= 3) {
+////						System.out.println(i);
+////						System.out.println(lastSowIndex);
+////						printBoard(currentBoard);
+////						updateBoard(i - playerAdjustment, currentPlayer == 1 ? true : false, currentBoard);
+////						printBoard(currentBoard);
+////						System.exit(0);
+//
+//					updateBoard(i - playerAdjustment, currentPlayer == 1 ? true : false, currentBoard);
+//					if (repeatMove) {
+//						repeatMove = false;
+//						continue PlayMove;
+//					}
+//					currentPlayer = currentPlayer == 1 ? 2 : 1;
+//					continue PlayMove;
+//				}
+//			}
+
+//			for (int i = pitNum - 3; i >= 0; i--) {
+//				if (currentBoard[i + playerAdjustment + currentBoard[i + playerAdjustment]] == 0 && true) {
+//
+//				}
+//			}
 
 	    	for (int i = 0; i < pitNum; i++) {
 	    		if (currentBoard[i + playerAdjustment] == 0) {
