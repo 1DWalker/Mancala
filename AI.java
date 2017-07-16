@@ -147,7 +147,7 @@ public class AI {
 
     	return true;
 
-//    	if (simulations <= 1000) return true;
+//    	if (simulations <= 500) return true;
 //    	return false;
 	}
 
@@ -213,13 +213,6 @@ public class AI {
 					repeatMove = false;
 		    		continue;
 				}
-//				} else if (currentBoard[pitNum - 2 + playerAdjustment] == 0) {
-//					if (currentBoard[pitNum - 3 + playerAdjustment] == 3){
-//				    	updateBoard(pitNum - 3, currentPlayer == 1 ? true : false, currentBoard);
-//						repeatMove = false;
-//			    		continue;
-//					}
-//				}
 			}
 
 			//Play moves that repeat the turn
@@ -234,8 +227,8 @@ public class AI {
 //			}
 
 			//Play moves that repeat the turn
-			for (int i = pitNum - 2; i >= 0; i--) {
-				if (currentBoard[i + playerAdjustment] == pitNum - i) {
+			for (int i = pitNum - 1; i >= 0; i--) {
+				if (currentBoard[i + playerAdjustment] % (2 * pitNum + 1) == pitNum - i) {
 			    	updateBoard(i, currentPlayer == 1 ? true : false, currentBoard);
 					repeatMove = false;
 		    		continue PlayMove;
