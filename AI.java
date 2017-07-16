@@ -209,6 +209,17 @@ public class AI {
 
 				currentPlayer = currentPlayer == 1 ? 2 : 1;
 				continue;
+			} else if (currentBoard[pitNum - 1 + playerAdjustment] == 0) {
+				if (currentBoard[pitNum - 2 + playerAdjustment] == 2){
+			    	updateBoard(pitNum - 2, currentPlayer == 1 ? true : false, currentBoard);
+			    	if (repeatMove) {
+						repeatMove = false;
+			    		continue;
+			    	}
+
+					currentPlayer = currentPlayer == 1 ? 2 : 1;
+					continue;
+				}
 			}
 
 	    	for (int i = 0; i < pitNum; i++) {
